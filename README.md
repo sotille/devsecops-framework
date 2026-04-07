@@ -27,6 +27,7 @@ Security cannot be bolted on at the end of the software delivery lifecycle. This
   - [Architecture](docs/architecture.md)
   - [Framework](docs/framework.md)
   - [Implementation](docs/implementation.md)
+  - [Developer Experience](docs/developer-experience.md)
   - [Best Practices](docs/best-practices.md)
   - [Roadmap](docs/roadmap.md)
 - [Repository Structure](#repository-structure)
@@ -86,6 +87,8 @@ cd devsecops-framework
 | [Introduction](docs/introduction.md) | History, philosophy, business case, terminology | All stakeholders |
 | [Architecture](docs/architecture.md) | Reference architecture, toolchain layers, diagrams | Architects, Platform Engineers |
 | [Framework](docs/framework.md) | Lifecycle, controls, roles, toolchain reference | Security, DevOps, Engineering leads |
+| [AI Security](docs/ai-security.md) | Security controls for AI-assisted development, LLMs in pipelines, and AI-powered applications | Security Engineers, Architects, Developers |
+| [Secret Lifecycle Management](docs/secret-lifecycle-management.md) | Secret classification, provisioning patterns, automated rotation architecture, emergency revocation, and compliance evidence | Security Engineers, Platform Engineers |
 | [Implementation](docs/implementation.md) | Phased rollout guide, prerequisites, metrics | DevOps leads, Platform Engineers |
 | [Best Practices](docs/best-practices.md) | 30+ domain-specific best practices | All engineering roles |
 | [Roadmap](docs/roadmap.md) | 18-month roadmap, maturity model, KPIs | Leadership, Program Managers |

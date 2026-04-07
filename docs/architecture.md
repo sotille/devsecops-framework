@@ -395,6 +395,78 @@ graph LR
     R --> S
 ```
 
+### Three Pillars Interdependency (Mermaid)
+
+```mermaid
+graph TD
+    subgraph PEOPLE["People — Culture & Skills"]
+        P1[Security Champions]
+        P2[Developer Training]
+        P3[Shared Ownership Culture]
+        P4[Incident Learning Culture]
+    end
+
+    subgraph PROCESS["Process — Governance & Workflow"]
+        PR1[Vulnerability Management SLAs]
+        PR2[Threat Modeling at Design]
+        PR3[Security Design Reviews]
+        PR4[Change Management Integration]
+    end
+
+    subgraph TECHNOLOGY["Technology — Automation & Tooling"]
+        T1[SAST / DAST / SCA]
+        T2[IaC Scanning]
+        T3[Runtime Security]
+        T4[Compliance Automation]
+    end
+
+    PEOPLE <-->|Champions interpret tool output| TECHNOLOGY
+    PROCESS <-->|Workflows drive tool adoption| TECHNOLOGY
+    PEOPLE <-->|Culture enables process compliance| PROCESS
+
+    style PEOPLE fill:#d4edda,stroke:#28a745
+    style PROCESS fill:#cce5ff,stroke:#004085
+    style TECHNOLOGY fill:#fff3cd,stroke:#856404
+```
+
+### Layered Toolchain Architecture (Mermaid)
+
+```mermaid
+graph TB
+    L1["Layer 1: Developer Environment\nIDE Plugins · Pre-commit Hooks · Local Secret Scan"]
+    L2["Layer 2: Source Code Management\nBranch Protection · Commit Signing · Dependency Review"]
+    L3["Layer 3: Build (CI Pipeline)\nSAST · SCA · IaC Scan · Container Scan · SBOM"]
+    L4["Layer 4: Artifact Registry\nImage Signing · Registry Scanning · Admission Policy"]
+    L5["Layer 5: Deployment (CD Pipeline)\nDAST · Drift Detection · Secrets Injection · Progressive Delivery"]
+    L6["Layer 6: Runtime & Operations\nFalco · CSPM · SIEM · Incident Response"]
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+
+    VULN["Vulnerability Management Platform\n(DefectDojo / Snyk / Jira Security)"]
+    SIEM_INT["SIEM / Observability\n(Splunk / Elastic / Microsoft Sentinel)"]
+
+    L3 -.->|findings| VULN
+    L4 -.->|findings| VULN
+    L5 -.->|events| SIEM_INT
+    L6 -.->|events + alerts| SIEM_INT
+    VULN -.->|tickets| TICKET["Issue Tracker\n(Jira / GitHub Issues)"]
+```
+
+### Vulnerability Management Lifecycle (Mermaid)
+
+```mermaid
+flowchart LR
+    A([Discovery\nAutomated scans]) --> B([Triage\nClassify & deduplicate])
+    B --> C([Prioritize\nCVSS + business context])
+    C --> D([Assign\nTeam + SLA])
+    D --> E([Remediate\nFix + evidence])
+    E --> F([Verify\nRe-scan confirms fix])
+    F --> G([Close\nAudit trail updated])
+
+    SLA["SLA Targets\nCritical: 24h\nHigh: 7d\nMedium: 30d\nLow: 90d"]
+    D --> SLA
+```
+
 ### Three-Zone Security Architecture (ASCII)
 
 ```
