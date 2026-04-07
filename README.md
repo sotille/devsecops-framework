@@ -90,6 +90,7 @@ cd devsecops-framework
 | [AI Security](docs/ai-security.md) | Security controls for AI-assisted development, LLMs in pipelines, and AI-powered applications | Security Engineers, Architects, Developers |
 | [Secret Lifecycle Management](docs/secret-lifecycle-management.md) | Secret classification, provisioning patterns, automated rotation architecture, emergency revocation, and compliance evidence | Security Engineers, Platform Engineers |
 | [Implementation](docs/implementation.md) | Phased rollout guide, prerequisites, metrics | DevOps leads, Platform Engineers |
+| [Brownfield Adoption Guide](docs/brownfield-adoption-guide.md) | Adopting DevSecOps in existing environments: assessment, phased pipeline instrumentation, delta-based gating for legacy codebases, secrets in git history, and legacy pipeline migration | Security Engineers, DevOps leads |
 | [Best Practices](docs/best-practices.md) | 30+ domain-specific best practices | All engineering roles |
 | [Roadmap](docs/roadmap.md) | 18-month roadmap, maturity model, KPIs | Leadership, Program Managers |
 
@@ -123,6 +124,17 @@ devsecops-framework/
 **Developers** will use the best-practices document and framework reference daily as a guide for writing secure code, managing secrets, and understanding what security gates their commits must pass before production.
 
 **Risk and Compliance Teams** will find the framework's mapping to NIST CSF, OWASP Top 10, CIS Controls, and SOC 2 requirements useful for audit and governance purposes.
+
+---
+
+## Learning Resources
+
+The Techstream Book Series and hands-on lab companion extend the concepts in this framework with structured learning, exercises, and guided assessments.
+
+- **[Book 1: DevSecOps — Foundations & Transformation](https://www.techstream.app/learn)** — The book volume aligned with this framework. Covers the DevSecOps philosophy, the TDMM maturity model, organizational transformation methodology, and DORA-aligned metrics.
+- **[Hands-On Labs (techstream-learn/book-1-foundations/)](https://www.techstream.app/learn)** — Practical exercises including TDMM self-assessments, transformation roadmap building, and security champion program design.
+- **[Book Series Overview (VOLUMES.md)](../techstream-books/VOLUMES.md)** — Index of all four Techstream volumes covering CI/CD security, cloud security, and release governance.
+- **[Techstream Platform](https://www.techstream.app)** — The central portal for all Techstream frameworks, documentation, and learning resources.
 
 ---
 

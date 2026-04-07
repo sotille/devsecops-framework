@@ -353,6 +353,168 @@ When adding an MCP server, review the tool descriptions returned during MCP disc
 - Log all MCP tool invocations (server, tool name, caller agent, parameter schema)
 - Alert on: calls to allowlisted tools with atypical parameter patterns; calls to tools not previously observed from a given agent; MCP discovery requests from unexpected agents or hosts
 
+### Production MCP Server Deployment Patterns
+
+Deploying MCP servers in a production environment introduces infrastructure and operational concerns that do not arise in development-time agent use. The following patterns address network isolation, credential hygiene, availability, and audit integrity.
+
+#### Pattern 1: Sidecar MCP Server (Kubernetes)
+
+Run the MCP server as a sidecar container in the same Pod as the agent workload. The MCP transport (stdio or HTTP) is confined to the Pod network namespace — no external network exposure is needed.
+
+```yaml
+# Kubernetes Pod spec — agent + MCP server as sidecar
+apiVersion: v1
+kind: Pod
+metadata:
+  name: code-review-agent
+  namespace: ai-workloads
+spec:
+  serviceAccountName: code-review-agent-sa  # Minimal RBAC; no cluster-admin
+  containers:
+    - name: agent
+      image: myregistry.io/code-review-agent@sha256:<digest>
+      env:
+        - name: MCP_SERVER_URL
+          value: "http://localhost:8080"   # Loopback only — not exposed externally
+      resources:
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+
+    - name: github-mcp-server
+      image: myregistry.io/github-mcp-server@sha256:<digest>  # Pinned digest
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-mcp-credentials
+              key: token
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 65534
+        capabilities:
+          drop: ["ALL"]
+  # Network policy: block all external egress except GitHub API
+  # (defined separately as a CiliumNetworkPolicy or NetworkPolicy resource)
+```
+
+**Security properties of this pattern:**
+- MCP server is unreachable from outside the Pod — cannot be called by other workloads or external actors
+- Credentials are injected via Kubernetes Secrets and never appear in environment variables visible to the agent container
+- MCP server image is pinned to a digest — cannot be silently updated
+
+#### Pattern 2: Shared MCP Server with mTLS (Multi-Agent Fleet)
+
+When multiple agent instances share a common MCP server (e.g., a centralized database query server), expose the MCP server as a Kubernetes Service with mutual TLS enforced at the Istio or Cilium layer.
+
+```yaml
+# Istio PeerAuthentication — enforce mTLS for MCP server service
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: mcp-server-mtls
+  namespace: ai-workloads
+spec:
+  selector:
+    matchLabels:
+      app: database-mcp-server
+  mtls:
+    mode: STRICT
+
+---
+# Istio AuthorizationPolicy — only allow calls from approved agent service accounts
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: mcp-server-authz
+  namespace: ai-workloads
+spec:
+  selector:
+    matchLabels:
+      app: database-mcp-server
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/ai-workloads/sa/code-review-agent-sa"
+              - "cluster.local/ns/ai-workloads/sa/documentation-agent-sa"
+      to:
+        - operation:
+            methods: ["POST"]
+            paths: ["/mcp/*"]
+```
+
+#### Pattern 3: MCP Server Credential Rotation
+
+MCP servers that authenticate to external services (GitHub, Jira, Slack, databases) must have their credentials rotated on a defined schedule. Use External Secrets Operator to pull credentials from the secrets manager and rotate them without redeploying the MCP server.
+
+```yaml
+# ExternalSecret — rotate GitHub token for MCP server every 24 hours
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: github-mcp-credentials
+  namespace: ai-workloads
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: github-mcp-credentials
+    creationPolicy: Owner
+  data:
+    - secretKey: token
+      remoteRef:
+        key: secret/ai-workloads/github-mcp-server
+        property: token
+```
+
+**Credential rotation audit requirement:** Each credential rotation must produce a log entry in the audit trail. Vault's audit backend and the External Secrets Operator event stream both provide this — ship both to the SIEM.
+
+#### MCP Server Observability Requirements
+
+| Signal | Collection Method | Alert Condition |
+|--------|------------------|-----------------|
+| Tool invocation log (server, tool, agent, params schema, result) | Structured log from MCP server; forward to SIEM | Tool not in approved catalog for this agent identity |
+| MCP discovery handshake | Log on startup and re-discovery | Discovery from unexpected source IP or service account |
+| Credential usage (API calls made by MCP server) | Cloud provider API audit log (CloudTrail, Azure Monitor) | API calls outside expected scope for this server |
+| Error rate (tool call failures) | Metrics; Prometheus or Datadog | Sustained error rate > 5% — potential exfiltration probe |
+| MCP server process execution | Tetragon TracingPolicy (see [eBPF Security](../../cloud-security-devsecops/docs/ebpf-security.md)) | Unexpected subprocess spawned by MCP server |
+
+#### MCP Server Security Checklist
+
+```
+Supply Chain
+[ ] MCP server image pinned to immutable digest in all deployments
+[ ] MCP server source code reviewed before initial deployment
+[ ] MCP server package integrity verified (checksum, signature)
+[ ] MCP server version pinned; upgrade process requires security review
+
+Network Controls
+[ ] Sidecar MCP servers: loopback-only transport (no external exposure)
+[ ] Shared MCP servers: mTLS enforced; callers authenticated by service account
+[ ] Network policy restricts MCP server egress to declared external endpoints only
+[ ] No MCP server exposed on a public-facing port
+
+Credential Security
+[ ] Separate credentials per MCP server — no shared high-privilege tokens
+[ ] Credentials managed by secrets manager (not hardcoded, not in env vars in plaintext)
+[ ] Credential rotation configured; rotation events logged to SIEM
+
+Monitoring
+[ ] All tool invocations logged with agent identity, tool name, parameter schema
+[ ] Anomalous invocation patterns alert to security team within 5 minutes
+[ ] MCP server process behavior monitored by Tetragon or Falco
+[ ] Monthly review of per-server tool usage patterns for behavioral drift
+```
+
 ---
 
 ## AI Supply Chain Security
