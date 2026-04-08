@@ -579,11 +579,39 @@ Treat LLM model versions as software dependencies:
 
 ---
 
+## Framework Navigation
+
+This document is the AI security integration guide for the DevSecOps Framework. It provides the bridge between foundational DevSecOps controls and AI-specific security requirements, covering the five AI use cases that most engineering organizations encounter.
+
+For organizations that have moved beyond initial AI adoption and need a dedicated architecture for AI and agentic pipeline security, use the **[AI DevSecOps Framework](../../ai-devsecops-framework/docs/introduction.md)** as the primary reference. The AI DevSecOps Framework provides:
+
+| Topic | This Document | AI DevSecOps Framework |
+|---|---|---|
+| AI coding assistant controls | Use Cases 1–2 (complete) | Expanded in `developer-environment-controls.md` |
+| Prompt injection defense | Use Case 2–3 (controls) | Full architecture in `prompt-injection-defense.md` |
+| Agent authorization | Use Case 4 (principles) | Detailed POLA patterns in `agent-authorization.md` |
+| Blast radius containment | Use Case 4 (principles) | Architecture in `blast-radius-containment.md` |
+| Multi-agent trust | Not covered | `multi-agent-architecture.md` |
+| Agent audit trail | Use Case 4 (principles) | Full schema in `agent-audit-trail.md` |
+| Model supply chain | AI Supply Chain section | Complete in `model-supply-chain.md` |
+| MCP server security | Use Case 5 (complete) | Complemented by `pipeline-controls.md` |
+| AI security maturity | Not covered | Five-level model in `maturity-model.md` |
+| Agent forensics | Not covered | Via `forensics-and-incident-response-framework` |
+| Regulatory compliance (EU AI Act, ISO 42001) | Not covered | `regulatory-mapping.md`, `iso-42001-certification-roadmap.md` |
+
+**When to use this document:** Initial AI security review, governance policy creation, OWASP LLM Top 10 control mapping, MCP server deployment patterns.
+
+**When to use the AI DevSecOps Framework:** Designing AI-integrated pipeline architecture, implementing agent authorization systems, building forensic readiness for AI agents, achieving AI security maturity Level 3+, pursuing ISO 42001 certification.
+
+---
+
 ## Related Documents
 
+- [AI DevSecOps Framework](../../ai-devsecops-framework/docs/introduction.md) — Comprehensive AI and agentic pipeline security architecture (threat modeling, agent authorization, blast radius, audit trail, maturity model)
 - [DevSecOps Framework](framework.md) — Core security lifecycle and controls catalog
+- [Secure CI/CD Reference Architecture: AI-Assisted Development](../../secure-ci-cd-reference-architecture/docs/ai-assisted-development.md) — Pipeline-level controls for AI coding assistant integration
 - [Secure CI/CD Reference Architecture Threat Model](../../secure-ci-cd-reference-architecture/docs/threat-model.md) — Pipeline threat model including AI-in-pipeline considerations
 - [Software Supply Chain Security Framework](../../software-supply-chain-security-framework/docs/framework.md) — Dependency and artifact security controls
+- [Compliance Automation: AI Regulatory Frameworks](../../compliance-automation-framework/docs/regulatory-controls-matrix.md#section-11-ai-regulatory-frameworks) — EU AI Act, NIST AI RMF 1.0, and ISO 42001 control mappings
 - [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — LLM application security reference
-- [OWASP Agentic AI Threats](https://owasp.org/) — Emerging agentic AI threat taxonomy
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/) — MCP protocol reference

@@ -531,3 +531,142 @@ flowchart TD
     S -->|Yes| T[Block: Remediate before production]
     S -->|No| U[Production Deployment Approved]
 ```
+
+---
+
+## False Positive Management at Scale
+
+Alert fatigue is one of the most common causes of DevSecOps program failure. When engineers learn that the majority of security scanner findings are noise, they begin routing all findings to a low-priority queue — and genuine vulnerabilities are buried. Managing false positives is not an optional optimization; it is a prerequisite for a functioning security gate program.
+
+### Baseline: Measure Before You Tune
+
+Before tuning any scanner, establish a baseline. For each security tool in the pipeline, measure:
+
+| Metric | Definition | Target |
+|---|---|---|
+| **False positive rate** | Findings marked "not applicable" or suppressed after human review / total findings | < 20% for mature pipelines |
+| **Mean triage time** | Avg time from finding surfaced to finding closed or suppressed | < 2 business days |
+| **Finding age at escape** | Age of genuine vulnerabilities that reached production undetected | Track; target 0 escapes |
+| **Suppression ratio by tool** | % of each tool's findings suppressed via permanent rule | Alert if > 40% — signals misconfigured tool |
+
+Measure these metrics for 30 days before making tuning decisions. Tuning before measurement results in suppressing legitimate findings to hit noise-reduction targets.
+
+### Suppression vs. Exception: The Critical Distinction
+
+**Suppression (permanent rule):** A scanner rule that will never produce valid findings in this codebase — for example, a web framework SSRF rule in a service that never makes outbound HTTP calls. Suppress at the tool-configuration level; applies to all future scans.
+
+**Exception (time-bounded acknowledgment):** A specific finding that is a real vulnerability but has been risk-accepted for a defined period — for example, a High CVE in a dependency where no patch exists and the attack vector is not present in the deployment context. Exception records must include: expiry date, risk owner, business justification, compensating control if any.
+
+**Why this distinction matters:** A codebase with 300 permanent suppressions and 50 time-bounded exceptions is healthy — it has been deliberately tuned. A codebase with 350 exceptions (all permanent, none expiring) has suppressed its vulnerability program, not managed it.
+
+### SAST Tuning Process
+
+SAST tools (Semgrep, SonarQube, CodeQL) have rule sets designed for breadth, not precision. Typical false positive rates for default rule sets on a mature codebase: 30–60%.
+
+**Step 1 — Categorize findings by CWE:**
+```bash
+# Example: categorize Semgrep findings by rule ID
+semgrep --config=p/security-audit --json . \
+  | jq '[.results | group_by(.check_id)[] | {rule: .[0].check_id, count: length}] | sort_by(.count) | reverse'
+```
+
+**Step 2 — Identify high-volume, high-FP rules:**
+Rules generating the most findings with the lowest true-positive rate are the first tuning targets. Common patterns:
+- Generic path traversal rules firing on framework-managed path handling
+- SQL injection rules firing on parameterized query builder syntax
+- XSS rules firing on template engine auto-escaping contexts
+
+**Step 3 — Write targeted suppressions (Semgrep example):**
+```yaml
+# .semgrep/suppressions.yaml
+rules:
+  - id: suppress-sqli-in-orm-contexts
+    pattern-not-inside: |
+      db.session.query(...)
+    message: "Parameterized query via ORM — suppress generic SQLi rule"
+    # This suppression must be reviewed annually
+    metadata:
+      suppression_review_date: "2027-04-01"
+      suppression_owner: "security-team"
+      justification: "Django ORM parameterizes all queries by default; raw SQL not used"
+```
+
+**Step 4 — Measure suppression effectiveness:**
+After deploying suppressions, verify:
+- False positive rate dropped by at least the expected amount
+- No new genuine findings were suppressed (run suppression ruleset against known-vulnerable test fixtures)
+
+### SCA False Positive Patterns
+
+SCA tools (Grype, Snyk, Dependabot) flag CVEs based on package version ranges. Common false positive sources:
+
+**1. Vulnerability not reachable in deployment context:**
+A CVE in a library's optional component that is not enabled in the application (e.g., a CVE in a deserialization feature of a library where the application uses only the parsing feature).
+- Use VEX (Vulnerability Exploitability eXchange) documents to record and share these assessments
+- VEX is now supported by Grype, Trivy, and Dependency-Track
+
+```bash
+# Create a VEX document for a non-exploitable finding
+cat > vex.json << 'EOF'
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.com/vex/my-service-vex-2026-04-07",
+  "author": "security-team@example.com",
+  "timestamp": "2026-04-07T00:00:00Z",
+  "statements": [
+    {
+      "vulnerability": {"name": "CVE-2024-EXAMPLE"},
+      "products": [{"@id": "pkg:container/my-service@v1.2.3"}],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The affected deserialization path is not invoked; application uses parsing-only API"
+    }
+  ]
+}
+EOF
+
+# Apply VEX when scanning
+grype my-service:v1.2.3 --vex vex.json
+```
+
+**2. CVE fixed in a patch version not yet reflected in vulnerability database:**
+Vulnerability databases (NVD) can lag actual patches by days to weeks. Verify against the actual patch release notes, not just the CVSS data.
+
+**3. OS package CVE not relevant to containerized service:**
+A CVE in `libssl` may have no attack surface if the application does not make network connections using the OS-level TLS library. Document this in VEX rather than suppressing without record.
+
+### Gate Configuration: Tiered Severity Thresholds
+
+Do not apply the same break-the-build threshold to all codebases. Tier the thresholds based on risk profile:
+
+| Tier | Definition | SAST Block | SCA Block |
+|---|---|---|---|
+| **Tier 1 — Critical systems** | Payment processing, auth, PII storage | Critical + High | CVSS ≥ 7.0 |
+| **Tier 2 — Internal services** | Internal APIs, batch processors | Critical | CVSS ≥ 9.0 |
+| **Tier 3 — Development tools** | Internal tooling, non-production | None (report only) | CVSS ≥ 9.0 |
+
+Apply tier labels to repositories via metadata (GitHub topic, Backstage catalog annotation) and configure scanner thresholds based on the tier label. This prevents alert fatigue from applying Tier 1 thresholds to Tier 3 systems while ensuring Tier 1 systems receive adequate scrutiny.
+
+### Measuring Program Health: Security Gate Metrics Dashboard
+
+Publish these metrics to engineering leadership monthly:
+
+```
+Security Gate Program Health — April 2026
+==========================================
+Gate pass rate (no findings):          73% of builds
+Gate fail rate (blocked by finding):    18% of builds
+Exception rate (finding suppressed):     9% of builds
+
+Tool breakdown:
+  SAST (Semgrep):   FP rate 15% (down from 42% at launch)
+  SCA (Grype):      FP rate 8%
+  Secrets (Gitleaks): FP rate 3%
+  IaC (Checkov):    FP rate 22% (tuning in progress)
+
+Mean triage time: 1.4 business days (target: < 2)
+Findings at escape to production: 0 this month
+```
+
+A declining false positive rate over time is the primary indicator that the tuning program is working. A stable or increasing false positive rate indicates either tool misconfiguration or insufficient tuning investment.
+

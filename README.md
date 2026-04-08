@@ -133,7 +133,7 @@ The Techstream Book Series and hands-on lab companion extend the concepts in thi
 
 - **[Book 1: DevSecOps — Foundations & Transformation](https://www.techstream.app/learn)** — The book volume aligned with this framework. Covers the DevSecOps philosophy, the TDMM maturity model, organizational transformation methodology, and DORA-aligned metrics.
 - **[Hands-On Labs (techstream-learn/book-1-foundations/)](https://www.techstream.app/learn)** — Practical exercises including TDMM self-assessments, transformation roadmap building, and security champion program design.
-- **[Book Series Overview (VOLUMES.md)](../techstream-books/VOLUMES.md)** — Index of all four Techstream volumes covering CI/CD security, cloud security, and release governance.
+- **[Book Series Overview (VOLUMES.md)](../techstream-books/VOLUMES.md)** — Index of all five Techstream volumes covering CI/CD security, cloud security, release governance, and AI and agentic systems security.
 - **[Techstream Platform](https://www.techstream.app)** — The central portal for all Techstream frameworks, documentation, and learning resources.
 
 ---

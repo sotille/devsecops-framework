@@ -446,7 +446,58 @@ This document catalogs 30+ detailed best practices organized by security domain.
 
 ---
 
-### BP-G05: Conduct Regular Security Toolchain Reviews
+## AI-Assisted Development Security
+
+As organizations adopt AI coding assistants, AI-powered code review tools, and agentic CI/CD integrations, the best practices in this document must extend to cover new attack surfaces introduced by AI components. The following practices are required complements to the pipeline, code, and governance best practices above when AI tools are in use.
+
+### BP-AI01: Verify AI-Suggested Dependencies Before Use
+
+**Rationale:** AI coding assistants can generate package names that do not exist in public registries (slopsquatting). Unlike traditional typosquatting — where an attacker registers a package with a name similar to a legitimate one — slopsquatting targets package names that an AI hallucinated. Attackers monitor AI-generated code or predict common hallucinated names and pre-register them with malicious payloads. The attack is particularly difficult to detect because the developer trusts the AI's suggestion.
+
+**Implementation:**
+- Deploy a pre-commit hook that verifies package existence in your approved registry mirror before allowing `import` or dependency declarations to be committed
+- Configure your package manager to resolve packages exclusively from a private registry mirror (npm private registry, Artifactory, PyPI mirror) — reject installation of packages not present in the mirror
+- Treat any AI-suggested package that is absent from your mirror as potentially adversarial until verified by a human
+- Reference `ai-devsecops-framework/docs/developer-environment-controls.md` for complete implementation guidance
+
+---
+
+### BP-AI02: Treat AI Code Review as Advisory, Not Authoritative
+
+**Rationale:** AI code review tools can be manipulated through adversarial content in pull request descriptions, code comments, or commit messages — a technique called prompt injection. An adversary who can write to these fields can influence the AI reviewer's output, potentially causing it to approve malicious code or suppress legitimate findings. Organizations that configure AI code review as a blocking check (merge requires AI approval) have created an exploitable control.
+
+**Implementation:**
+- Configure AI code review tools as advisory (non-blocking) — they can suggest, but not approve
+- Run deterministic SAST and SCA tools as the blocking security gate; AI review supplements but does not replace them
+- Apply the same review standards to AI review configuration files as to production code (see BP-P06)
+- For security-sensitive code paths, require human Security Champion review regardless of AI review output
+
+---
+
+### BP-AI03: Apply Explicit Authorization Policies to All AI Agents
+
+**Rationale:** AI agents that operate in CI/CD pipelines may have broad access to code repositories, artifact registries, cloud accounts, and issue trackers. Without explicit authorization policies, an agent compromised through prompt injection or a malicious input can use its full permission set to exfiltrate data, modify production infrastructure, or introduce backdoored code. The blast radius of a compromised agent with unconstrained permissions can be equivalent to a compromised administrator account.
+
+**Implementation:**
+- Define a tool authorization policy for every AI agent operating in your pipeline — what specific tools, operations, and resource scopes it is permitted to use
+- Store authorization policies in version control and review changes through the pull request process
+- Implement session-scoped credentials for agent service accounts — each agent session gets a token valid only for that task
+- Configure approval gates for high-consequence actions (production deployment, merge, secret rotation): the agent must obtain human approval before proceeding
+- Reference `ai-devsecops-framework/docs/agent-authorization.md` for the full policy schema and implementation guide
+
+---
+
+### BP-AI04: Maintain an AI Tool Inventory with Security Review
+
+**Rationale:** AI tools adopted without security review create unknown risk. Developers adopt AI assistants that transmit code context to external providers, AI review bots with broad repository permissions, and AI-powered build tools with pipeline access — often without the security team's awareness. An unknown AI tool is an uncontrolled AI tool.
+
+**Implementation:**
+- Establish a simple AI tool review process: before deploying any AI tool in the development pipeline, evaluate it against four questions: What data can it access? Where does that data go? What actions can it take? What audit trail does it produce?
+- Maintain an inventory of approved AI tools — tool name, provider, data classification of code/data processed, responsible team, and approval date
+- Require security review for tools requesting repository-level access tokens, CI/CD pipeline write access, or integration with production systems
+- Re-review AI tools annually or when the provider updates terms of service or data handling policies
+
+---
 
 **Rationale:** The DevSecOps toolchain is itself a technology product that requires maintenance. Security tool vendors release updates with improved detection capabilities, reduced false positive rates, and new vulnerability coverage. Tools that are not updated fall behind the vulnerability landscape and may miss emerging threat patterns.
 
