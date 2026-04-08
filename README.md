@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://techstream.app">
+    <img src="https://techstream.app/images/techstream-icon.svg" width="72" height="72" alt="TechStream" />
+  </a>
+</p>
+
 # DevSecOps Framework
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
