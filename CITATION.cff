@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "DevSecOps Framework"
+message: "If you reference, cite, or build upon this framework, please cite it as below."
+type: software
+authors:
+  - family-names: Sotille
+    given-names: Felipe
+    affiliation: "TechStream (Independent)"
+    email: "fsotille@gmail.com"
+repository-code: "https://github.com/sotille/devsecops-framework"
+url: "https://www.techstream.app"
+license: Apache-2.0
+version: "1.0.0"
+date-released: "2026-05-17"
+abstract: >-
+  Comprehensive DevSecOps framework providing battle-tested principles, reference architectures, security controls, and implementation guidelines for integrating security seamlessly into modern software delivery pipelines across cloud-native and enterprise environments. Defines an 8-phase DevSecOps lifecycle aligned with NIST SSDF (SP 800-218) and DoD DevSecOps Fundamentals v2.5.
+keywords:
+  - devsecops
+  - ssdf
+  - secure-sdlc
+  - ci-cd-security
+  - eo-14028
+  - nist-800-218
